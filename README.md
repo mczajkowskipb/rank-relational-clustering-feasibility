@@ -1,106 +1,116 @@
-# Rank-Relational Clustering – Preliminary Feasibility Study
 
-This repository contains a **reference (non-optimized) implementation** and **preliminary experiments** supporting a feasibility study of **rank-based relational clustering** included in an NCN OPUS grant proposal.
+# Rank-based Relational Clustering – Feasibility Study
 
-The goal of this repository is **not** to provide a production-ready framework, but to demonstrate:
-- feasibility of relational clustering based on within-sample orderings,
-- robustness to common perturbations in omics data,
-- realistic computational costs using a simple baseline implementation.
+This repository provides a **minimal, reference implementation** of rank-based relational clustering
+used as a preliminary feasibility study for an NCN OPUS proposal.
+The goal is to demonstrate **robustness and practical feasibility**, not to provide a fully optimized system.
+
+The experiments compare a standard value-based baseline (k-means with Euclidean distance)
+against relational clustering based on **k-medoids operating in rank space**
+using **Footrule** and **Kendall** distances.
 
 ---
 
-## Scope of the repository
+## Key characteristics
 
-The experiments compare:
-- **Value-based clustering**: k-means with Euclidean distance,
-- **Relational clustering**: k-medoids (PAM) operating in rank space using:
-  - Footrule distance,
-  - Kendall (discordant pairs) distance.
-
-The focus is on **robustness**, not absolute clustering accuracy.
+- Unsupervised, label-agnostic preprocessing  
+- Rank-based representation invariant to monotonic transformations  
+- Explicit robustness evaluation under controlled perturbations  
+- Simple, transparent Python implementation  
+- Executable on a standard consumer-grade laptop (no GPU, no parallelization)
 
 ---
 
 ## Datasets
 
-The repository includes **three standard, publicly available gene expression benchmarks** obtained from Bioconductor:
+The study uses three **public, widely adopted gene expression benchmarks**
+distributed via **Bioconductor**, commonly used in methodological work:
 
-| Dataset | Samples (N) | Features (P) | Task |
-|-------|------------|--------------|------|
-| Golub ALL/AML | 72 | ~7,000 | leukemia subtype |
-| Colon cancer | 62 | ~2,000 | tumor vs normal |
-| DLBCL | 194 | ~3,500 | lymphoma subtype |
+- **Golub ALL/AML**
+- **Colon cancer**
+- **DLBCL (Diffuse Large B-Cell Lymphoma)**
 
-These datasets are **widely used in methodological studies** of high-dimensional clustering and were selected to avoid dataset-specific tuning or cherry-picking.
+These datasets represent increasing difficulty and decreasing signal strength,
+reducing the risk of cherry-picking or dataset-specific tuning.
 
-> **Note:** Original datasets are included for transparency and reproducibility. They originate from Bioconductor packages and are redistributed here strictly for research and academic use.
-
----
-
-## Preprocessing
-
-To limit dimensionality while remaining fully unsupervised:
-- the **top 500 genes** were selected using **median absolute deviation (MAD)**,
-- no class labels were used during feature selection.
-
-Each sample was then **rank-encoded**, producing within-sample permutations used for relational distances.
+Original datasets are provided in the `data/` directory for full reproducibility.
 
 ---
 
-## Perturbation scenarios
+## Experimental protocol
 
-Robustness was evaluated under the following controlled perturbations:
+### Feature filtering
+To control dimensionality without supervision, the **top 500 genes**
+were selected using **median absolute deviation (MAD)**.
+All downstream analyses operate exclusively on this reduced representation.
 
-- **Baseline**  
-  Original data after MAD-based feature selection (top 500 genes).
+### Clustering methods
+- **k-means (Euclidean distance)** – value-based baseline  
+- **k-medoids + Footrule distance** (rank space)  
+- **k-medoids + Kendall distance** (rank space)
 
-- **Feature dropout**  
-  Random removal of **20% of features** per run.
+The number of clusters is set to the true number of biological classes.
 
-- **Additive noise**  
-  Additive Gaussian noise with variance equal to **20% of the empirical variance** of each feature.
+### Perturbation scenarios
+Robustness is evaluated under four scenarios:
 
-- **Monotonic scaling**  
-  Sample-wise multiplicative scaling applied to **50% of samples**, with scaling factors drawn from `[0.5, 2.0]`, simulating batch effects while preserving within-sample orderings.
+1. **Baseline** (no perturbation)
+2. **Feature dropout** (random removal of a fraction of features)
+3. **Additive noise** (Gaussian noise)
+4. **Monotonic scaling** (sample-wise rescaling of expression values)
 
-Each scenario was repeated multiple times; clustering quality was assessed using **Adjusted Rand Index (ARI)**.
+Each perturbation scenario is repeated multiple times (typically 20 runs),
+and clustering quality is assessed using **Adjusted Rand Index (ARI)**.
 
 ---
 
 ## Results
 
-Final robustness results are provided as:
-- **tables** (`results/step8_table.tex`),
-- **figures** (`figures/fig_step8_*.png`).
+Final robustness plots are available in the `figures/` directory.
+Numerical summaries (mean, min, max ARI over runs) are stored in `results/`.
 
-The figures show that:
-- value-based k-means is highly sensitive to perturbations,
-- rank-based relational clustering maintains substantially higher stability,
-- monotonic scaling (batch effects) is particularly well handled by rank-based methods.
+Key observations:
+- Value-based k-means fails to recover meaningful structure across datasets
+- Rank-based relational clustering achieves substantially higher stability
+- Kendall distance is consistently more robust than Footrule
+- Monotonic scaling does not affect rank-based methods, as expected
 
 ---
 
 ## Computational performance
 
-All experiments were executed using a **straightforward, non-optimized Python implementation** on a **standard consumer-grade laptop** (no GPU, no parallelization).
+All experiments were executed using a **non-optimized Python implementation**
+on a standard consumer-grade laptop.
 
-Observed runtimes:
-- Footrule distance matrices: **seconds**,
-- Kendall distance matrices: **minutes**,  
-  corresponding to **roughly an order-of-magnitude slowdown compared to Footrule**,
-- k-medoids clustering on cached distances: **well under one second**.
+- Full Kendall distance matrices (up to ~200 samples) computed within minutes
+- Footrule distance computation is roughly an order of magnitude faster
+- k-medoids clustering on cached distance matrices completes in **under one second**
+- Overall, Kendall-based clustering is approximately:
+  - **10× slower than Footrule**
+  - **~100× slower than k-medoids assignment alone**
 
-These results demonstrate that rank-based relational clustering is **already computationally feasible at this scale**, motivating further optimization and scalability work.
+These results demonstrate practical feasibility at moderate scale
+and motivate dedicated optimization and scalability strategies.
 
 ---
 
 ## Repository structure
-├── data/ # Original datasets (Bioconductor)
-│ ├── golub/
-│ ├── colon/
-│ └── DLBCL/
-├── results/ # Intermediate results and cached distances
-├── figures/ # Final robustness plots
+
+```
+.
+├── data/                 # Original datasets (Bioconductor)
+│   ├── golub/
+│   ├── colon/
+│   └── DLBCL/
+├── results/              # Intermediate results and aggregated summaries
+│   ├── step6_baseline.csv
+│   ├── step7_perturbations.csv
+│   ├── step8_summary.csv
+│   └── cache_*.npz
+├── figures/              # Final robustness plots
+│   ├── fig_step8_golub.png
+│   ├── fig_step8_colon.png
+│   └── fig_step8_DLBCL.png
 ├── step1_io_sanity.py
 ├── step2_mad_top500.py
 ├── step3_rank_encoding.py
@@ -111,15 +121,13 @@ These results demonstrate that rank-based relational clustering is **already com
 ├── step8_aggregation_and_plots.py
 ├── requirements.txt
 └── README.md
+```
 
-
-Scripts are designed to be run **sequentially** (`step1` → `step8`).
+Scripts are designed to be run sequentially (`step1` → `step8`).
 
 ---
 
-## Reproducibility
-
-To reproduce the experiments:
+## Usage
 
 ```bash
 pip install -r requirements.txt
@@ -131,24 +139,30 @@ python step5_dist_matrices.py
 python step6_baseline_clustering.py
 python step7_perturbations.py
 python step8_aggregation_and_plots.py
+```
 
+---
 
-Disclaimer
+## Scope and limitations
 
-This repository provides a reference implementation used for a preliminary feasibility study.
+This repository is intended as a **feasibility and robustness demonstration**.
+It deliberately avoids:
 
-The code is intentionally simple and unoptimized.
+- GPU acceleration
+- Parallel implementations
+- Advanced optimization techniques
 
-No claims are made regarding optimal performance or scalability.
+These aspects are addressed as part of the planned research tasks.
 
-Results are intended to motivate further methodological and computational development.
+---
 
-License
+## License
 
-This project is released under the MIT License.
+MIT License.
 
-Citation
+---
 
-If you reference this repository in an academic context, please cite it as:
+## Author
 
-Czajkowski, M. (2025). Rank-relational clustering: preliminary feasibility study. GitHub repository.
+Marcin Czajkowski  
+Białystok University of Technology
