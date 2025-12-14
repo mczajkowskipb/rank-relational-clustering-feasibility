@@ -66,8 +66,25 @@ and clustering quality is assessed using **Adjusted Rand Index (ARI)**.
 
 ## Results
 
-Final robustness plots are available in the `figures/` directory.
-Numerical summaries (mean, min, max ARI over runs) are stored in `results/`.
+The following figures summarise clustering robustness under controlled
+perturbations for three benchmark datasets. Results are reported as
+Adjusted Rand Index (ARI) distributions over repeated runs.
+
+### Golub (ALL/AML)
+![Golub robustness](results/fig_step8_golub.png)
+
+### Colon cancer
+![Colon robustness](results/fig_step8_colon.png)
+
+### DLBCL
+![DLBCL robustness](results/fig_step8_DLBCL.png)
+
+Aggregated ARI statistics (mean and range over repeated runs) are provided in:
+
+- `results/step8_summary.csv`
+
+This file contains per-dataset, per-scenario summaries and can be used
+for independent inspection or reproduction of plots.
 
 Key observations:
 - Value-based k-means fails to recover meaningful structure across datasets
@@ -102,15 +119,11 @@ and motivate dedicated optimization and scalability strategies.
 │   ├── golub/
 │   ├── colon/
 │   └── DLBCL/
-├── results/              # Intermediate results and aggregated summaries
-│   ├── step6_baseline.csv
-│   ├── step7_perturbations.csv
-│   ├── step8_summary.csv
-│   └── cache_*.npz
-├── figures/              # Final robustness plots
+├── results/              # Aggregated summaries and plots
 │   ├── fig_step8_golub.png
 │   ├── fig_step8_colon.png
 │   └── fig_step8_DLBCL.png
+│   ├── step8_summary.csv
 ├── step1_io_sanity.py
 ├── step2_mad_top500.py
 ├── step3_rank_encoding.py
